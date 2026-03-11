@@ -1,86 +1,60 @@
 import streamlit as st
 import pandas as pd
+import os
 
-# 페이지 설정
-st.set_page_config(page_title="주식 분석 앱", layout="wide")
+st.set_page_config(page_title="Stock Analysis", layout="wide")
 
-# 줄바꿈 처리를 위한 CSS 스타일 정의
-st.markdown("""
-    <style>
-    .preserve-whitespace {
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        background-color: #f0f2f6;
-        padding: 15px;
-        border-radius: 10px;
-        line-height: 1.6;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# CSS: 가독성 향상
+st.markdown("""<style>.result-box { white-space: pre-wrap; background-color: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; }</style>""", unsafe_allow_html=True)
 
 st.title("📊 종목 분석 데이터 조회기")
 
-uploaded_file = st.file_uploader("엑셀 파일을 업로드하세요", type=["xlsx"])
+# 파일 경로 설정 (깃허브에 올린 파일 이름과 동일해야 함)
+FILE_NAME = "data.xlsx"
 
-if uploaded_file:
+# 파일 존재 여부 확인 후 데이터 로드
+if os.path.exists(FILE_NAME):
     try:
-        df = pd.read_excel(uploaded_file)
+        # 데이터 불러오기 (캐싱 처리하여 속도 향상)
+        @st.cache_data
+        def load_data():
+            return pd.read_excel(FILE_NAME)
         
-        # 상단 검색 바 및 버튼 레이아웃
-        col1, col2 = st.columns([4, 1])
-        with col1:
-            search_query = st.text_input("분석할 종목명을 입력하세요", key="search_input")
-        with col2:
-            st.write(" ") # 수직 정렬용 공백
-            search_button = st.button("🔍 검색하기", use_container_width=True)
+        df = load_data()
+        
+        # 검색 기준 컬럼 찾기
+        search_col = '종목명' if '종목명' in df.columns else df.columns[0]
+        
+        query = st.text_input(f"{search_col}을 입력하세요 (예: 지슨)")
 
-        # 검색 실행 (엔터 또는 버튼 클릭 시)
-        if search_query or search_button:
-            result = df[df['종목명'].astype(str).str.contains(search_query, na=False)]
-
-            if not result.empty:
-                row = result.iloc[0]
-                st.divider()
-                st.subheader(f"🔍 {row['종목명']} 상세 분석")
-
-                # 탭 구성 (요청 순서 유지)
-                tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-                    "📰 기사", "🎯 코어테마", "🌐 전체테마", "🥇 대장이력", "📝 키워드요약", "📄 기사본문", "📈 K스윙"
-                ])
-
-                # 공통 함수: 스크롤 vs 전체보기 전환 기능
-                def display_content(title, content):
-                    is_expand = st.checkbox(f"{title} 전체 펼쳐보기", key=f"check_{title}")
-                    if is_expand:
-                        # 클릭 한 번에 전체 내용 출력 (줄바꿈 보존)
-                        st.markdown(f'<div class="preserve-whitespace">{content}</div>', unsafe_allow_html=True)
-                    else:
-                        # 기본 스크롤 박스
-                        st.text_area(f"{title} (스크롤 가능)", value=str(content), height=250, disabled=True)
-
-                with tab1: # 기사
-                    display_content("기사", row['기사'])
-
-                with tab2: # 코어테마 (줄바꿈 반영)
-                    st.write("**🎯 코어테마 상세:**")
-                    st.markdown(f'<div class="preserve-whitespace">{row["코어테마"]}</div>', unsafe_allow_html=True)
-
-                with tab3: # 전체테마
-                    st.markdown(f'<div class="preserve-whitespace">{row["전체테마"]}</div>', unsafe_allow_html=True)
-
-                with tab4: # 대장이력 (줄바꿈 반영)
-                    st.write("**🥇 대장이력 상세:**")
-                    st.markdown(f'<div class="preserve-whitespace">{row["대장이력"]}</div>', unsafe_allow_html=True)
-
-                with tab5: # 키워드요약
-                    display_content("키워드요약", row['키워드요약'])
-
-                with tab6: # 기사본문 (더 긴 설명)
-                    display_content("기사본문", row['더 긴 설명'])
-
-                with tab7: # K스윙
-                    display_content("K스윙", row['K스윙'])
+        if query:
+            res = df[df[search_col].astype(str).str.contains(query, na=False, case=False)]
+            if not res.empty:
+                row = res.iloc[0]
+                st.subheader(f"🔍 {row[search_col]} 상세 결과")
+                
+                tabs = st.tabs(["📰 기사", "🎯 테마", "🥇 대장/K스윙", "📝 요약/본문"])
+                
+                with tabs[0]: st.text_area("관련 기사", value=str(row.get('기사', '내용 없음')), height=300)
+                with tabs[1]: 
+                    st.info(f"**코어테마:** {row.get('코어테마', '없음')}")
+                    st.write(f"**전체테마:** {row.get('전체테마', '없음')}")
+                with tabs[2]:
+                    st.warning(f"**대장이력:** {row.get('대장이력', '없음')}")
+                    st.success(f"**K스윙 정리:** {row.get('K스윙 정리', '없음')}")
+                with tabs[3]:
+                    st.write("**키워드 요약**")
+                    st.markdown(f'<div class="result-box">{row.get("키워드요약", "없음")}</div>', unsafe_allow_html=True)
+                    st.write("**기사 본문**")
+                    st.markdown(f'<div class="result-box">{row.get("더 긴 설명", "내용 없음")}</div>', unsafe_allow_html=True)
             else:
-                st.warning("데이터를 찾을 수 없습니다.")
+                st.warning("검색 결과가 없습니다.")
+                
+        # 업데이트 방법 안내 (사이드바)
+        st.sidebar.success("✅ 데이터 로드 완료")
+        st.sidebar.info("💡 업데이트 방법: GitHub에서 'data.xlsx' 파일을 새 파일로 덮어쓰기(Overwrite) 하시면 됩니다.")
+
     except Exception as e:
-        st.error(f"오류가 발생했습니다: {e}")
+        st.error(f"파일을 읽는 중 오류가 발생했습니다: {e}")
+else:
+    st.error(f"'{FILE_NAME}' 파일을 찾을 수 없습니다. GitHub에 파일을 업로드해 주세요.")
