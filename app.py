@@ -4,35 +4,36 @@ import os
 
 st.set_page_config(page_title="Stock Analysis", layout="wide")
 
-# CSS: 탭 가로 스크롤 시각화 및 강제 활성화
+# CSS: 탭 가로 스크롤바 강제 시각화
 st.markdown("""
 <style>
-    /* 1. 탭 리스트 가로 스크롤 강제 및 디자인 */
+    /* 1. 탭 리스트 전체 설정 */
     div[data-testid="stTabs"] [data-baseweb="tab-list"] {
         display: flex !important;
-        overflow-x: auto !important; /* 가로 스크롤 허용 */
+        overflow-x: auto !important; /* 가로 스크롤 활성화 */
         white-space: nowrap !important;
-        padding-bottom: 10px !important; /* 스크롤바 공간 확보 */
+        padding-bottom: 12px !important; /* 스크롤바가 탭 글자를 가리지 않게 공간 확보 */
     }
 
-    /* 2. 스크롤바를 항상 보이게 설정 (크롬, 사파리 등) */
+    /* 2. 스크롤바 디자인 (항상 보이게 강제) */
     div[data-testid="stTabs"] [data-baseweb="tab-list"]::-webkit-scrollbar {
-        height: 8px !important; /* 스크롤바 두께 */
+        height: 10px !important; /* 스크롤바 두께를 키움 */
         display: block !important;
     }
     div[data-testid="stTabs"] [data-baseweb="tab-list"]::-webkit-scrollbar-track {
-        background: #f1f1f1 !important;
-        border-radius: 10px;
+        background: #f0f0f0 !important; /* 스크롤바 뒷배경 */
+        border-radius: 5px;
     }
     div[data-testid="stTabs"] [data-baseweb="tab-list"]::-webkit-scrollbar-thumb {
-        background: #888 !important; /* 스크롤바 색상 (진하게) */
-        border-radius: 10px;
+        background: #999999 !important; /* 스크롤바 막대기 색상 (진하게) */
+        border-radius: 5px;
+        border: 2px solid #f0f0f0;
     }
     div[data-testid="stTabs"] [data-baseweb="tab-list"]::-webkit-scrollbar-thumb:hover {
-        background: #555 !important;
+        background: #666666 !important;
     }
 
-    /* 3. 본문 스타일 */
+    /* 3. 본문 텍스트 박스 */
     .content-box {
         white-space: pre-wrap; 
         word-break: break-all;
@@ -41,10 +42,6 @@ st.markdown("""
         border-radius: 5px;
         line-height: 1.6;
         border: 1px solid #eee;
-    }
-    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
-        font-size: 16px; 
-        font-weight: bold;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -74,20 +71,13 @@ if os.path.exists(FILE_NAME):
                 # 탭 구성
                 tabs = st.tabs(["📰 기사", "🎯 테마", "🥇 대장이력", "💡 키워드요약", "🌐 전체테마", "📝 기사본문", "📈 K스윙"])
 
-                with tabs[0]:
-                    st.markdown(f'<div class="content-box">{row.get("기사", "내용 없음")}</div>', unsafe_allow_html=True)
-                with tabs[1]:
-                    st.markdown(f'<div class="content-box">{row.get("코어테마", "내용 없음")}</div>', unsafe_allow_html=True)
-                with tabs[2]:
-                    st.markdown(f'<div class="content-box">{row.get("대장이력", "정보 없음")}</div>', unsafe_allow_html=True)
-                with tabs[3]:
-                    st.success(row.get("키워드요약", "내용 없음"))
-                with tabs[4]:
-                    st.markdown(f'<div class="content-box">{row.get("전체테마", "내용 없음")}</div>', unsafe_allow_html=True)
-                with tabs[5]:
-                    st.markdown(f'<div class="content-box">{row.get("더 긴 설명", "내용 없음")}</div>', unsafe_allow_html=True)
-                with tabs[6]:
-                    st.markdown(f'<div class="content-box">{row.get("K스윙 정리", "정보 없음")}</div>', unsafe_allow_html=True)
+                with tabs[0]: st.markdown(f'<div class="content-box">{row.get("기사", "내용 없음")}</div>', unsafe_allow_html=True)
+                with tabs[1]: st.markdown(f'<div class="content-box">{row.get("코어테마", "내용 없음")}</div>', unsafe_allow_html=True)
+                with tabs[2]: st.markdown(f'<div class="content-box">{row.get("대장이력", "정보 없음")}</div>', unsafe_allow_html=True)
+                with tabs[3]: st.success(row.get("키워드요약", "내용 없음"))
+                with tabs[4]: st.markdown(f'<div class="content-box">{row.get("전체테마", "내용 없음")}</div>', unsafe_allow_html=True)
+                with tabs[5]: st.markdown(f'<div class="content-box">{row.get("더 긴 설명", "내용 없음")}</div>', unsafe_allow_html=True)
+                with tabs[6]: st.markdown(f'<div class="content-box">{row.get("K스윙 정리", "정보 없음")}</div>', unsafe_allow_html=True)
             else:
                 st.warning("검색 결과가 없습니다.")
         st.sidebar.success("✅ 데이터 연결됨")
